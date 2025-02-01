@@ -18,12 +18,11 @@
 N = 5;
 x = msspoly('x',N); % x of dimension N
 
-randn('state',4);
+randn('state',0);
 
-vx = monomials(x,6:6); % Degree 4 homogeneous
+vx = monomials(x,4:4); % Degree 4 homogeneous
 % Generate random polynomial
 cp = randn(1,length(vx));
-%cp = ones(1, length(vx));
 p = cp*vx;
 
 %% DSOS program
@@ -36,15 +35,7 @@ prog = prog.withIndeterminate(x);
 [prog,gamma] = prog.newFree(1);
 
 % DSOS constraint
-% prog = prog.withDSOS((p - gamma*(x'*x)^2)); % Only line that changes between DSOS,SDSOS,SOS programs
-% prog = prog.withDSOS((p - gamma*(x(1)*x(1)*x(1)*x(1) + x(2)*x(2)*x(2)*x(2) + x(3)*x(3)*x(3)*x(3)+...
-%     x(4)*x(4)*x(4)*x(4) + x(5)*x(5)*x(5)*x(5) ))); % Only line that changes between DSOS,SDSOS,SOS programs
-
-%prog = prog.withDSOS(( 100 * (x(1)*x(1)*x(1)*x(2)  ) - gamma*(x(1)*x(1)*x(1)*x(1) + x(2)*x(2)*x(2)*x(2) + x(3)*x(3)*x(3)*x(3)+...
-%     x(4)*x(4)*x(4)*x(4) + x(5)*x(5)*x(5)*x(5) )));
-
- prog = prog.withDSOS(( 100 * (x(1)*x(1)*x(2)*x(2)*x(3)*x(3)  ) - gamma*(x(1)*x(1)*x(1)*x(1)*x(1)*x(1) + x(2)*x(2)*x(2)*x(2)*x(2)*x(2)+ x(3)*x(3)*x(3)*x(3)*x(3)*x(3) )));
-
+prog = prog.withDSOS((p - gamma*(x'*x)^2)); % Only line that changes between DSOS,SDSOS,SOS programs
 
 % MOSEK options
 options = spot_sdp_default_options();
