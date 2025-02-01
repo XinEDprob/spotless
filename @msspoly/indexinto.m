@@ -3,7 +3,8 @@ function q=indexinto(p,varargin)
     pp = 1:prod(p.dim);
 
     Q=subsref(reshape(pp,p.dim),struct('type','()','subs',{varargin}));
-
+    %Q = varargin;
+    
     qq=Q(:);
     % subscripts for the values which come form this matrix.
     [qi,qj] = ind2sub(size(Q),1:length(qq));

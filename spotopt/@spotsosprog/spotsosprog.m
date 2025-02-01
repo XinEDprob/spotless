@@ -7,7 +7,7 @@ classdef spotsosprog < spotprog
         sosTrigExpr = {};
         dsosExpr = {};
         sdsosExpr = {};
-	diagsosExpr = {};
+		diagsosExpr = {};
         indeterminates = msspoly([]);
         gramMatrices = {};
         gramMonomials = {};
@@ -77,7 +77,7 @@ classdef spotsosprog < spotprog
             % Rescale expr to normalize things.
             A0 = diff(expr,decvar);
             b0 = subs(expr,decvar,0*decvar);
-            [~,~,Coeff] = decomp([b0 A0].');
+            [~,~,Coeff] = decomp([b0 A0]');
             
             eqMultFac = 1;
             
@@ -237,7 +237,7 @@ classdef spotsosprog < spotprog
         
         function pr = withPrivateIndeterminate(pr,var)
             [vid,f] = isfree(var);
-            if ~f,
+            if ~f
                 error('Indeterminates must be free msspolys.');
             end
             skip=match(pr.indeterminates,var);
@@ -261,7 +261,7 @@ classdef spotsosprog < spotprog
         
         function pr = withIndeterminate(pr,var)
             [vid,f] = isfree(var);
-            if ~f,
+            if ~f
                 error('Indeterminates must be free msspolys.');
             end
             
@@ -414,14 +414,14 @@ classdef spotsosprog < spotprog
         %
         % sol = minimize(pr,pobj,solver,options)
         %
-            if nargin >= 1
+            if nargin >= 1 %&& varargin{1} ~= 0
                 if ~ pr.isRealPolyLinearInDec(varargin{1})
                    error('Objective function must be linear in decision variables') 
                 end
             end
         
         
-            if nargin >= 4,
+            if nargin >= 4
                 options = varargin{3};
             else
                 options = spotprog.defaultOptions;
@@ -483,8 +483,10 @@ classdef spotsosprog < spotprog
                     t = pr.sosTrigExpr{i};
                     [pr,Q{ioff},phi{ioff},y{ioff},basis{ioff}] = pr.buildSOSTrigDecomp(t{:});
                 end
-                
-                sol = minimize@spotprog(pr,varargin{:});
+%                   tic;
+                 sol = minimize@spotprog(pr,varargin{:});
+%                   time = toc;
+%                  disp(['Solution time: ' num2str(time)])
             end
         end        
     end
