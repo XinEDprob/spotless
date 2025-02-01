@@ -24,7 +24,7 @@ ii=repmat(1:m,m,1);         % column number in an m-by-m matrix
 jj=repmat((1:m)',1,m);      % row number
 a=min(ii,jj);
 b=max(ii,jj);
-if nargin<2,
+if nargin<2
     h=a+round(b.*(b-1)/2);
 else
     e=2*min(a,m-b+1)-1;

@@ -10,7 +10,7 @@ function [b,xn]=isfree(p)
 xn = [];
 
 
-if ~isa(p,'msspoly'), 
+if ~isa(p,'msspoly')
     b = 0;
     return;
 end

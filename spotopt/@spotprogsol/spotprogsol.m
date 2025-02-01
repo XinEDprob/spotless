@@ -48,8 +48,8 @@ classdef spotprogsol
             if nargin < 7, dualize = 0; end
             sol.dualize = dualize;
             
-            sol.gramMatrices = prog.gramMatrices;
-            sol.gramMonomials = prog.gramMonomials;
+%            sol.gramMatrices = prog.gramMatrices;
+%            sol.gramMonomials = prog.gramMonomials;
             
         end
 

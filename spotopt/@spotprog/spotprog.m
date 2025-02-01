@@ -27,9 +27,10 @@ classdef spotprog
         %
         % variables = x(p).
         %
-        K1 = struct('l',0,'q',[],'r',[],'s',[]);
-        K2 = struct('l',0,'q',[],'r',[],'s',[]);
+        K1 = struct('l',0,'q',[],'r',[], 'p', [],'s',[]);
+        K2 = struct('l',0,'q',[],'r',[], 'p', [],'s',[]);
         
+        powpar = [];
         % w = [x;z],  w(p(i)) corresponds to variable i.
         % Really, I want v(p(i)) corresponds to variable x(i).
         %
@@ -85,15 +86,18 @@ classdef spotprog
             end
         end
         
-        function [nl,nq,nr,ns] = coneDim(K)
+        function [nl,nq,nr,np,ns] = coneDim(K)
             nl = K.l;
             nq = sum(K.q);
             nr = sum(K.r);
+            np = sum(K.p);
             ns = sum(spotprog.psdDimToNo(K.s));
         end
         
+        
+        %%% did not change this function for pow
         function Pdiag = coneInnerProduct(K)
-            [nl,nq,nr,ns] = spotprog.coneDim(K);
+            [nl,nq,nr,np,ns] = spotprog.coneDim(K);
             
             Pdiag = ones(nl+nq+nr,1);
             
@@ -116,11 +120,12 @@ classdef spotprog
             Pdiag = [ Pdiag ; d];
         end
         
-        function [ol,oq,or,os] = coneOffset(K)
+        function [ol,oq,or, op,os] = coneOffset(K)
             ol = K.l;
             oq = ol+sum(K.q);
             or = oq+sum(K.r);
-            os = or+sum(spotprog.psdDimToNo(K.s));
+            op = or + sum(K.p);
+            os = op+sum(spotprog.psdDimToNo(K.s));
         end
     end
     
@@ -155,8 +160,12 @@ classdef spotprog
             [~,~,off] = spotprog.coneOffset(pr.K1);
         end
         
-        function off = psdOffset(pr)
+        function off = powOffset(pr)
             [~,~,~,off] = spotprog.coneOffset(pr.K1);
+        end
+        
+        function off = psdOffset(pr)
+            [~,~,~,~,off] = spotprog.coneOffset(pr.K1);
         end
         
         function off = posCstrOffset(pr)
@@ -269,6 +278,8 @@ classdef spotprog
 
         end
         
+        
+        %%% did not change for pow
         function [pr,z] = withCone(pr,e,K)
             [nl,nq,nr,ns]=spotprog.coneDim(K);
             [ol,oq,or,os]=spotprog.coneOffset(K);
@@ -361,6 +372,22 @@ classdef spotprog
             z = mss_v2s(z);
         end
         
+       function [pr,z] = withpow(pr,e,dim)
+            if nargin < 3,
+                dim = size(e,1);
+            end
+            
+            dim = spotprog.checkCstrDimension(e,dim);
+            
+            off = pr.rlorCstrOffset;
+            pr.K2.r = [pr.K2.r dim];
+            
+            [pr,z] = addConstraintExpr(pr,off,e);
+        end
+        
+        
+        
+        
         function pr = withDD(pr,Q)
             if size(Q,1) ~= size(Q,2)
                 error('Arugment must be square.');
@@ -451,6 +478,7 @@ classdef spotprog
             v = reshape(v,n,m);
         end
         
+        
         function [pr,v] = newRLor(pr,dim,m)
             if nargin < 3, m = 1; end
             if ~spotprog.isVectorDimension(dim)
@@ -463,6 +491,21 @@ classdef spotprog
             n = sum(dim);
             [pr,v] = pr.insertConeVariables(nr,n*m);
             pr.K1.r = [ pr.K1.r repmat(dim,1,m) ];
+            v = reshape(v,n,m);
+        end
+        
+        function [pr,v] = newPow(pr,dim,m)
+            if nargin < 3, m = 1; end
+            if ~spotprog.isVectorDimension(dim)
+                error('dim must be a row of non-negative scalars.');
+            end
+            if ~spotprog.isScalarDimension(m)
+                error('m must be a non-negative integer scalar.');
+            end
+            np = pr.powOffset;
+            n = sum(dim);
+            [pr,v] = pr.insertConeVariables(np,n*m);
+            pr.K1.p = [ pr.K1.p repmat(dim,1,m) ];
             v = reshape(v,n,m);
         end
         
@@ -768,7 +811,7 @@ classdef spotprog
 
                 % Enable basic facial reduction.
                 % save Abck_1sdsos_30.mat A b c K options P pr pobj 
-                [x,y,z,info] = solver(A,b,c,K,options);
+                [x,y,z,info] = solver(A,b,c,K,options,pr.powpar);
 
                 if ~isempty(x)
                    xsol = P*x;
@@ -917,7 +960,7 @@ classdef spotprog
             end
             
             nf = pr.numFree;
-            [nl,nq,nr,ns] = spotprog.coneDim(pr.K1);
+            [nl,nq,nr,np,ns] = spotprog.coneDim(pr.K1);
 
             projs = cell(1,length(pr.K1.s));
             for i = 1:length(pr.K1.s)
@@ -926,14 +969,14 @@ classdef spotprog
             if isempty(projs), P = [];
             else, P = blkdiag(projs{:});
             end
-            A = [ pr.A(:,1:nf+nl+nq+nr) pr.A(:,nf+nl+nq+nr+(1:ns))*P];
+            A = [ pr.A(:,1:nf+nl+nq+nr + np) pr.A(:,nf+nl+nq+nr + np +(1:ns))*P];
             
             c = [ c1 
-                  c2(1:nl+nq+nr)
-                  P'*c2((nl+nq+nr)+(1:ns),:)];
+                  c2(1:nl+nq+nr + np)
+                  P'*c2((nl+nq+nr + np)+(1:ns),:)];
             
             b = pr.b;
-            P = blkdiag(speye(nf+nl+nq+nr),P);
+            P = blkdiag(speye(nf+nl+nq+nr +np),P);
             K = pr.K1;
             K.f = pr.numFree;
         end

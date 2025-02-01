@@ -12,7 +12,7 @@ function [pr] = toPrimalWithFree(pr)
     pr.F = [];
     pr.coneCstrVar = [];
     pr.coneToCstrVar = [];
-    pr.K2 = struct('l',0,'q',[],'r',[],'s',[]);
+    pr.K2 = struct('l',0,'q',[],'r',[], 'p',[], 's',[]);
             
     % Next, we need to move over the coneCstrVar.
     coneVar = pr.coneVar;
@@ -22,10 +22,12 @@ function [pr] = toPrimalWithFree(pr)
     K1len = [ pr.K1.l
               sum(pr.K1.q)
               sum(pr.K1.r)
+              sum(pr.K1.p)
               sum(spotprog.psdDimToNo(pr.K1.s)) ];
     K2len = [ K2.l
               sum(K2.q)
               sum(K2.r)
+              sum(K2.p)
               sum(spotprog.psdDimToNo(K2.s)) ];
     
     % Insert gaps into the old mapping.
@@ -52,6 +54,7 @@ function [pr] = toPrimalWithFree(pr)
     pr.K1.l = pr.K1.l + K2.l;
     pr.K1.q = [ pr.K1.q  K2.q];
     pr.K1.r = [ pr.K1.r  K2.r];
+    pr.K1.p = [pr.K1.p K2.p];
     pr.K1.s = [ pr.K1.s  K2.s];
     
     % Next we need to square away the equations.

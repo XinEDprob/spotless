@@ -1,4 +1,4 @@
-function [x,y,z,info] = spot_mosek(A,b,c,K,options)
+function [x,y,z,info] = spot_mosek(A,b,c,K,options,powpar)
 
 
     if ~isfield(K,'f') 
@@ -22,12 +22,16 @@ function [x,y,z,info] = spot_mosek(A,b,c,K,options)
     if ~isfield(K,'r') || all(K.r == 0)
         K.r = [];
     end
+    
+    if ~isfield(K,'p') || all(K.p == 0)
+        K.p = [];
+    end
 
 
     if nargin < 5, options = spot_sdp_default_options(); end
     
     
-    [n,nf,nl,nq,nr,ns] = spot_sdp_cone_dim(K);
+    [n,nf,nl,nq,nr,np,ns] = spot_sdp_cone_dim(K);
     
     %    if ns > 0, error('SPOT: semidefinite constraints not supported for MOSEK.'); end
     
@@ -35,29 +39,42 @@ function [x,y,z,info] = spot_mosek(A,b,c,K,options)
     % First add the non-semidefinite cones.
     evalc('[r,res] = mosekopt(''symbcon'');');
     
-    nn = nf+nl+nq+nr;
+    nn = nf+nl+nq+nr+np;
     prob = struct();
     prob.c = full(c(1:nn)');
     prob.a = A(:,1:nn);
     prob.blc = full(b');
     prob.buc = full(b');
     
-    if nr > 0
+    if nr > 0|| np >0
         prob.cones.type = [];
         prob.cones.subptr = [];
         prob.cones.sub = [];
+        prob.cones.conepar = [];
     end
 
     if ~isempty(K.q)
         prob.cones.type = repmat(res.symbcon.MSK_CT_QUAD,1,length(K.q));
         prob.cones.subptr = [ 1+[0 cumsum(K.q(1:end-1))] ];
         prob.cones.sub    = [ nf+nl+(1:nq) ];
+%         prob.cones.conepar = [1*ones(nq,1)];
     end
     if ~isempty(K.r)
         prob.cones.type = [ prob.cones.type repmat(res.symbcon.MSK_CT_RQUAD,1,length(K.r))];
         prob.cones.subptr = [ prob.cones.subptr 1+nq+[0 cumsum(K.r(1:end-1))] ];
         prob.cones.sub    = [ prob.cones.sub nf+nl+nq+(1:nr) ];
+        prob.cones.conepar = [prob.cones.conepar 1*ones(length(K.r),1)];
     end
+    
+    if ~isempty(K.p)
+        prob.cones.type = [ prob.cones.type repmat(res.symbcon.MSK_CT_PPOW,1,length(K.p))];
+        prob.cones.subptr = [ prob.cones.subptr 1+nq+nr+[0 cumsum(K.p(1:end-1))] ];
+        prob.cones.sub    = [ prob.cones.sub nf+nl+nq+nr+ (1:np) ];
+        %prob.cones.subptr = [ prob.cones.subptr 1+nq+nr+[0 cumsum(K.p(1:end-1))] ];
+        %prob.cones.sub    = [ prob.cones.sub nf+nl+nq+nr+(1:np) ];
+        prob.cones.conepar = [prob.cones.conepar powpar];
+    end
+    
     
     function [j,k,l] = jklOf(s,jj)
         j = zeros(size(jj,1),size(jj,2));
@@ -114,7 +131,7 @@ function [x,y,z,info] = spot_mosek(A,b,c,K,options)
     if nl > 0
         prob.blx    = [ -Inf*ones(1,nf) ...
                         zeros(1,nl) ...
-                        -Inf*ones(1,nq+nr)];
+                        -Inf*ones(1,nq+nr+np)];
     end
     
     if options.verbose
