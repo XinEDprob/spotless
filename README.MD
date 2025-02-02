@@ -19,9 +19,9 @@ https://github.com/XinEDprob/spotless.git
 The implementation of our methods for Table 1-3 and Example 4-7 are contained in ```tensor_paper/experiments.m```
 
 For implementation of Example 8 
-- ```tensor_paper/Fan_product_M_tensors.m``` is for the computation of H-eigenvalues for our methods. 
+- ```tensor_paper/Fan_product_M_tensors.m``` is for the computation of H-eigenvalues with our methods. 
 - ```lb_H_eigenvalue_Fan_Prodcut.m``` is to compute the lower bound with the H-eigenvalues from ```tensor_paper/Fan_product_M_tensors.m```.
-- ```other_method_H_eigen_M_tensor.m``` is for the computation of H-eigenvalues for other methods in the comparison.
+- ```other_method_H_eigen_M_tensor.m``` is for the computation of H-eigenvalues with other methods in the comparison.
 - ```other_method_H_eigen_Fan.m``` is to compute the lower bound with the H-eigenvalues from ```other_method_H_eigen_M_tensor.m```
 
 The experiments with TenEig (https://users.math.msu.edu/users/chenlipi/teneig.html) (for part of Table 2) are contained in ```tensor_paper/homotopy_H_eig.m```
